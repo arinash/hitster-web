@@ -11,7 +11,24 @@ class PlayScreen extends StatefulWidget {
 
 class _PlayScreenState extends State<PlayScreen> {
 
+  late final MobileScannerController _scannerController;
   bool _hasScanned = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openLink(String url) async {
 
@@ -79,10 +96,7 @@ class _PlayScreenState extends State<PlayScreen> {
       body: Stack(
         children: [
           MobileScanner(
-            controller: MobileScannerController(
-              detectionSpeed: DetectionSpeed.normal,
-              facing: CameraFacing.back,
-            ),
+            controller: _scannerController,
             onDetect: (barcodeCapture) {
               if (_hasScanned) return;
 
@@ -95,6 +109,8 @@ class _PlayScreenState extends State<PlayScreen> {
 
                 debugPrint('QR code detected: $code');
                 _openLink(code);
+
+                _scannerController.stop();
 
                 Navigator.pop(context);
               }

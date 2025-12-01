@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 
 class PlayScreen extends StatefulWidget {
   const PlayScreen({super.key});
@@ -10,17 +10,39 @@ class PlayScreen extends StatefulWidget {
 }
 
 class _PlayScreenState extends State<PlayScreen> {
+
+  late final MobileScannerController _scannerController;
   bool _hasScanned = false;
 
+  @override
+  void initState() {
+    super.initState();
+
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
   Future<void> _openLink(String url) async {
+
     try {
       final Uri incoming = Uri.parse(url);
+
       String? spotifyAppUri;
       Uri webUri = incoming;
 
       if (incoming.scheme == 'spotify') {
+        // already an app uri
         spotifyAppUri = url;
       } else if ((incoming.host == 'open.spotify.com' || incoming.host.endsWith('spotify.com')) && incoming.pathSegments.isNotEmpty) {
+        // e.g. /track/{id}
         final seg0 = incoming.pathSegments[0];
         if (seg0 == 'track' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
@@ -32,10 +54,13 @@ class _PlayScreenState extends State<PlayScreen> {
           final id = incoming.pathSegments[1];
           spotifyAppUri = 'spotify:artist:$id';
         }
+        // keep webUri as the original https link (incoming)
       } else {
+        // If the scanned code is not a spotify link, just try opening it directly
         spotifyAppUri = null;
       }
 
+      // Try to open in Spotify app first (if we have a spotifyAppUri)
       if (spotifyAppUri != null) {
         final Uri appUri = Uri.parse(spotifyAppUri);
         if (await canLaunchUrl(appUri)) {
@@ -44,6 +69,7 @@ class _PlayScreenState extends State<PlayScreen> {
         }
       }
 
+      // Fallback to web link
       if (await canLaunchUrl(webUri)) {
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
         return;
@@ -61,34 +87,36 @@ class _PlayScreenState extends State<PlayScreen> {
       appBar: AppBar(
         title: const Text('Scan QR code on the card', style: TextStyle(
           fontFamily: 'SwankyAndMooMooCyrillic',
-          color: Colors.white
+          color:  Colors.white
         ),),
         backgroundColor: Color(0xFF2B5FC7),
         centerTitle: true,
         foregroundColor: Colors.white,
       ),
-      body: AiBarcodeScanner(
-        onDetect: (BarcodeCapture capture) {
-          if (_hasScanned) return;
-          
-          final barcode = capture.barcodes.firstOrNull;
-          if (barcode == null || barcode.rawValue == null) return;
-          
-          setState(() {
-            _hasScanned = true;
-          });
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _scannerController,
+            onDetect: (barcodeCapture) {
+              if (_hasScanned) return;
 
-          final String code = barcode.rawValue!;
-          debugPrint('QR code detected: $code');
-          _openLink(code);
-          
-          Navigator.pop(context);
-        },
-        controller: MobileScannerController(
-          detectionSpeed: DetectionSpeed.noDuplicates,
-        ),
-        overlayBuilder: (context, constraints) {
-          return Center(
+              final String? code = barcodeCapture.barcodes.first.rawValue;
+
+              if (code != null) {
+                setState(() {
+                  _hasScanned = true;
+                });
+
+                debugPrint('QR code detected: $code');
+                _openLink(code);
+
+                _scannerController.stop();
+
+                Navigator.pop(context);
+              }
+            },
+          ),
+          Center(
             child: Container(
               width: 250,
               height: 250,
@@ -97,8 +125,8 @@ class _PlayScreenState extends State<PlayScreen> {
                 borderRadius: BorderRadius.circular(10)
               ),
             ),
-          );
-        },
+          )
+        ],
       ),
     );
   }

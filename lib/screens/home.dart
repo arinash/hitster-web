@@ -29,9 +29,9 @@ class Home extends StatelessWidget {
                     letterSpacing: 2,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 const Text(
-                  'ХИТСТЕРРР',
+                  'ХИТСТЕР',
                   style: TextStyle(
                     fontSize: 64,
                     fontWeight: FontWeight.bold,

@@ -42,7 +42,7 @@ class Home extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 60),
                   child: Image.asset(
                     'assets/images/bg.png',
                   ),

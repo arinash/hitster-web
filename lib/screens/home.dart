@@ -31,7 +31,7 @@ class Home extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'ХИТСТЕР',
+                  'ХИТСТЕРРР',
                   style: TextStyle(
                     fontSize: 64,
                     fontWeight: FontWeight.bold,

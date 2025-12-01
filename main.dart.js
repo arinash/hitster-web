@@ -64174,7 +64174,7 @@ $1(a){return B.bzd},
 $S:406}
 A.DH.prototype={
 U(a){var s=null,r=t.V
-return A.aeH(s,A.wE(B.dK,A.a([A.C_(A.a([B.bAY,A.Tu(A.C_(A.a([B.bFc,B.f7,B.bF8,B.f7,new A.eE(B.AH,A.aiv("assets/images/bg.png",s,s,s),s)],r),B.bf,B.qs,B.bK)),B.f7,new A.eE(B.AG,A.aeP(new A.wJ(B.bF5,new A.V3(a),s),s,1/0),s),new A.eE(B.AF,A.aeP(new A.wJ(B.bF4,new A.V4(a),s),s,1/0),s)],r),B.bf,B.qt,B.bK)],r),B.f8))}}
+return A.aeH(s,A.wE(B.dK,A.a([A.C_(A.a([B.bAY,A.Tu(A.C_(A.a([B.bFc,B.f7,B.bF8,B.f7,new A.eE(B.AF,A.aiv("assets/images/bg.png",s,s,s),s)],r),B.bf,B.qs,B.bK)),B.f7,new A.eE(B.AH,A.aeP(new A.wJ(B.bF5,new A.V3(a),s),s,1/0),s),new A.eE(B.AG,A.aeP(new A.wJ(B.bF4,new A.V4(a),s),s,1/0),s)],r),B.bf,B.qt,B.bK)],r),B.f8))}}
 A.V3.prototype={
 $0(){A.ajc(this.a,"/play",t.X)},
 $S:0}
@@ -71490,9 +71490,9 @@ B.AB=new A.br(16,4,16,4)
 B.AC=new A.br(20,24,20,40)
 B.AD=new A.br(4,0,4,0)
 B.AE=new A.br(4,4,4,4)
-B.AF=new A.br(50,0,50,50)
-B.AG=new A.br(50,10,50,10)
-B.AH=new A.br(60,0,60,0)
+B.AF=new A.br(50,0,50,0)
+B.AG=new A.br(50,0,50,50)
+B.AH=new A.br(50,10,50,10)
 B.AI=new A.br(8,0,8,0)
 B.AJ=new A.br(8,4,8,4)
 B.AL=new A.tE(null)
@@ -80699,7 +80699,7 @@ B.bF5=new A.ek("\u0418\u0413\u0420\u0410\u0422\u042c",null,B.iX,null,null)
 B.bF6=new A.ek("\u041f\u043e\u0434\u0433\u043e\u0442\u043e\u0432\u043a\u0430",null,B.iW,null,null)
 B.bF7=new A.ek("\u0416\u0435\u0442\u043e\u043d \u0425\u0418\u0422\u0421\u0422\u0415\u0420",null,B.iW,null,null)
 B.bCE=new A.o(!0,B.be,null,"SwankyAndMooMooCyrillic",null,null,64,B.bz,null,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
-B.bF8=new A.ek("\u0425\u0418\u0422\u0421\u0422\u0415\u0420",null,B.bCE,null,null)
+B.bF8=new A.ek("\u0425\u0418\u0422\u0421\u0422\u0415\u0420\u0420\u0420",null,B.bCE,null,null)
 B.wx=new A.o(!0,B.i,null,"SwankyAndMooMooCyrillic",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.bF9=new A.ek("\u041f\u0440\u0430\u0432\u0438\u043b\u0430 \u0438\u0433\u0440\u044b",null,B.wx,null,null)
 B.bFa=new A.ek("Scan QR code on the card",null,B.wx,null,null)

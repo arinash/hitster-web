@@ -100,7 +100,20 @@ class _PlayScreenState extends State<PlayScreen> {
             onDetect: (barcodeCapture) {
               if (_hasScanned) return;
 
-              final String? code = barcodeCapture.barcodes.first.rawValue;
+              // The web implementation of MobileScanner may sometimes
+              // send a BarcodeCapture with an empty `barcodes` list.
+              // Guard against that to avoid `Bad state: No element`.
+              final barcodes = barcodeCapture.barcodes;
+              if (barcodes.isEmpty) return;
+
+              // Prefer the first non-null rawValue from detected barcodes.
+              String? code;
+              for (final b in barcodes) {
+                if (b.rawValue != null && b.rawValue!.isNotEmpty) {
+                  code = b.rawValue;
+                  break;
+                }
+              }
 
               if (code != null) {
                 setState(() {
@@ -110,8 +123,8 @@ class _PlayScreenState extends State<PlayScreen> {
                 debugPrint('QR code detected: $code');
                 _openLink(code);
 
+                // Stop camera and go back once we've handled a code.
                 _scannerController.stop();
-
                 Navigator.pop(context);
               }
             },

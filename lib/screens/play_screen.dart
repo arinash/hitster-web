@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:ui_web' as ui_web;
@@ -53,13 +52,12 @@ class _PlayScreenState extends State<PlayScreen> {
     try {
       _videoElement = html.VideoElement()
         ..autoplay = true
-        ..setAttribute('playsinline', 'true') // Important for iOS
-        ..setAttribute('webkit-playsinline', 'true') // Important for iOS
+        ..setAttribute('playsinline', 'true')
+        ..setAttribute('webkit-playsinline', 'true')
         ..style.width = '100%'
         ..style.height = '100%'
         ..style.objectFit = 'cover';
 
-      // Create canvas for jsQR (hidden, used for image processing)
       _canvasElement = html.CanvasElement();
 
       ui_web.platformViewRegistry.registerViewFactory(
@@ -73,7 +71,6 @@ class _PlayScreenState extends State<PlayScreen> {
 
   Future<void> _initializeCamera() async {
     try {
-      // Check if BarcodeDetector is supported (Chrome desktop, Edge)
       final barcodeDetectorSupported = js_util.hasProperty(html.window, 'BarcodeDetector');
       _useBarcodeDetector = barcodeDetectorSupported;
       
@@ -86,10 +83,9 @@ class _PlayScreenState extends State<PlayScreen> {
         return;
       }
 
-      // Request camera access with iOS-compatible constraints
       final constraints = {
         'video': {
-          'facingMode': {'ideal': 'environment'}, // back camera preferred
+          'facingMode': {'ideal': 'environment'},
           'width': {'ideal': 1280, 'max': 1920},
           'height': {'ideal': 720, 'max': 1080},
         },
@@ -100,7 +96,6 @@ class _PlayScreenState extends State<PlayScreen> {
         _stream = await html.window.navigator.mediaDevices!.getUserMedia(constraints);
       } catch (e) {
         debugPrint('Back camera not available, trying any camera: $e');
-        // Fallback for devices without back camera
         final fallbackConstraints = {
           'video': true,
           'audio': false,
@@ -110,7 +105,6 @@ class _PlayScreenState extends State<PlayScreen> {
 
       _videoElement!.srcObject = _stream;
       
-      // Wait for video to be ready (critical for iOS)
       await _videoElement!.onLoadedMetadata.first;
       await _videoElement!.play();
 
@@ -120,7 +114,6 @@ class _PlayScreenState extends State<PlayScreen> {
 
       debugPrint('Camera initialized, video dimensions: ${_videoElement!.videoWidth}x${_videoElement!.videoHeight}');
 
-      // Wait longer for iOS to ensure video is fully ready
       await Future.delayed(const Duration(milliseconds: 1000));
       _startScanning();
     } catch (e) {
@@ -132,7 +125,6 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _startScanning() {
-    // Scan every 300ms for better performance
     _scanTimer = Timer.periodic(const Duration(milliseconds: 300), (_) async {
       if (_hasScanned || _videoElement == null) return;
       
@@ -172,14 +164,12 @@ class _PlayScreenState extends State<PlayScreen> {
 
   Future<void> _detectBarcodeWithJsQR() async {
     try {
-      // Check if jsQR is loaded
       if (!js_util.hasProperty(html.window, 'jsQR')) {
-        return; // Library not loaded yet
+        return;
       }
 
       final video = _videoElement!;
       
-      // Skip if video not ready
       if (video.readyState != html.MediaElement.HAVE_ENOUGH_DATA) {
         return;
       }
@@ -190,17 +180,14 @@ class _PlayScreenState extends State<PlayScreen> {
 
       if (width == 0 || height == 0) return;
 
-      // Set canvas size to match video
       canvas.width = width;
       canvas.height = height;
 
       final context = canvas.getContext('2d') as html.CanvasRenderingContext2D;
       context.drawImageScaled(video, 0, 0, width, height);
 
-      // Get image data
       final imageData = context.getImageData(0, 0, width, height);
 
-      // Call jsQR
       final jsQR = js_util.getProperty(html.window, 'jsQR');
       final code = js_util.callMethod(
         jsQR,
@@ -226,9 +213,13 @@ class _PlayScreenState extends State<PlayScreen> {
     debugPrint('QR code detected: $code');
     _stopCamera();
     _openLink(code);
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    
+    // Close the screen after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
   }
 
   void _stopCamera() {
@@ -237,48 +228,49 @@ class _PlayScreenState extends State<PlayScreen> {
     _videoElement?.srcObject = null;
   }
 
-  Future<void> _openLink(String url) async {
+  void _openLink(String url) {
     try {
+      debugPrint('Opening URL: $url');
+      
       final Uri incoming = Uri.parse(url);
-      String? spotifyAppUri;
-      Uri webUri = incoming;
+      String targetUrl = url;
 
-      if (incoming.scheme == 'spotify') {
-        spotifyAppUri = url;
-      } else if ((incoming.host == 'open.spotify.com' || 
-                  incoming.host.endsWith('spotify.com')) && 
-                 incoming.pathSegments.isNotEmpty) {
+      // Convert Spotify web URLs to app URLs
+      if ((incoming.host == 'open.spotify.com' || 
+           incoming.host.endsWith('spotify.com')) && 
+          incoming.pathSegments.isNotEmpty) {
         final seg0 = incoming.pathSegments[0];
         if (seg0 == 'track' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          spotifyAppUri = 'spotify:track:$id';
+          targetUrl = 'spotify:track:$id';
         } else if (seg0 == 'album' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          spotifyAppUri = 'spotify:album:$id';
+          targetUrl = 'spotify:album:$id';
         } else if (seg0 == 'artist' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          spotifyAppUri = 'spotify:artist:$id';
-        }
-      } else {
-        spotifyAppUri = null;
-      }
-
-      if (spotifyAppUri != null) {
-        final Uri appUri = Uri.parse(spotifyAppUri);
-        if (await canLaunchUrl(appUri)) {
-          await launchUrl(appUri, mode: LaunchMode.externalApplication);
-          return;
+          targetUrl = 'spotify:artist:$id';
+        } else if (seg0 == 'playlist' && incoming.pathSegments.length >= 2) {
+          final id = incoming.pathSegments[1];
+          targetUrl = 'spotify:playlist:$id';
         }
       }
 
-      if (await canLaunchUrl(webUri)) {
-        await launchUrl(webUri, mode: LaunchMode.externalApplication);
-        return;
-      }
+      debugPrint('Target URL: $targetUrl');
 
-      debugPrint('Could not launch $url');
+      // Use direct window.open for better iOS compatibility
+      // The '_blank' target with noopener/noreferrer works better on iOS Safari
+      html.window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      
+      debugPrint('Link opened successfully');
     } catch (e) {
-      debugPrint('Invalid URL scanned: $url — $e');
+      debugPrint('Error opening link: $e');
+      
+      // Fallback: try opening the original URL
+      try {
+        html.window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (fallbackError) {
+        debugPrint('Fallback also failed: $fallbackError');
+      }
     }
   }
 
@@ -328,9 +320,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 )
               : Stack(
                   children: [
-                    // Camera view
                     HtmlElementView(viewType: _viewId),
-                    // Overlay with scan frame
                     Center(
                       child: Container(
                         width: 250,
@@ -344,7 +334,6 @@ class _PlayScreenState extends State<PlayScreen> {
                         ),
                       ),
                     ),
-                    // Show which detection method is being used
                     Positioned(
                       bottom: 20,
                       left: 0,

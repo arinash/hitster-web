@@ -228,7 +228,7 @@ class _PlayScreenState extends State<PlayScreen> {
     _videoElement?.srcObject = null;
   }
 
-  void _openLink(String url) {
+void _openLink(String url) {
     try {
       debugPrint('Opening URL: $url');
       
@@ -263,23 +263,33 @@ class _PlayScreenState extends State<PlayScreen> {
       debugPrint('Web URL: $webUrl');
       debugPrint('Deep link URL: $deepLinkUrl');
 
-      // iOS-compatible approach: Try deep link first, fallback to web URL
+      // iOS-compatible approach: Try deep link directly
       if (deepLinkUrl != null) {
-        // Create a hidden iframe to attempt the deep link
-        final iframe = html.IFrameElement()
-          ..style.display = 'none'
-          ..src = deepLinkUrl;
-        html.document.body!.append(iframe);
+        // Try direct window.location assignment first (works best for deep links)
+        try {
+          html.window.location.href = deepLinkUrl;
+          debugPrint('Attempted direct deep link');
+        } catch (e) {
+          debugPrint('Direct deep link failed, trying iframe method: $e');
+          
+          // Fallback to iframe method
+          final iframe = html.IFrameElement()
+            ..style.display = 'none'
+            ..src = deepLinkUrl;
+          html.document.body!.append(iframe);
+          
+          Future.delayed(const Duration(milliseconds: 500), () {
+            iframe.remove();
+          });
+        }
         
-        // Remove iframe after a short delay
-        Future.delayed(const Duration(milliseconds: 500), () {
-          iframe.remove();
-        });
-        
-        // Also open web URL as fallback after a short delay
-        // If the app opens, the user won't see this; if it doesn't, they'll get the web version
-        Future.delayed(const Duration(milliseconds: 250), () {
-          html.window.open(webUrl, '_blank', 'noopener,noreferrer');
+        // If deep link fails (app not installed), redirect to web after timeout
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          // Check if page is still visible (deep link didn't work)
+          if (html.document.visibilityState == 'visible') {
+            debugPrint('Deep link may have failed, opening web URL');
+            html.window.location.href = webUrl;
+          }
         });
       } else {
         // Not a Spotify link, just open it normally

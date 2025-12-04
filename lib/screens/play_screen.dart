@@ -233,33 +233,58 @@ class _PlayScreenState extends State<PlayScreen> {
       debugPrint('Opening URL: $url');
       
       final Uri incoming = Uri.parse(url);
-      String targetUrl = url;
+      String webUrl = url;
+      String? deepLinkUrl;
 
-      // Convert Spotify web URLs to app URLs
+      // Handle Spotify URLs
       if ((incoming.host == 'open.spotify.com' || 
            incoming.host.endsWith('spotify.com')) && 
           incoming.pathSegments.isNotEmpty) {
         final seg0 = incoming.pathSegments[0];
         if (seg0 == 'track' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          targetUrl = 'spotify:track:$id';
+          deepLinkUrl = 'spotify:track:$id';
+          webUrl = 'https://open.spotify.com/track/$id';
         } else if (seg0 == 'album' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          targetUrl = 'spotify:album:$id';
+          deepLinkUrl = 'spotify:album:$id';
+          webUrl = 'https://open.spotify.com/album/$id';
         } else if (seg0 == 'artist' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          targetUrl = 'spotify:artist:$id';
+          deepLinkUrl = 'spotify:artist:$id';
+          webUrl = 'https://open.spotify.com/artist/$id';
         } else if (seg0 == 'playlist' && incoming.pathSegments.length >= 2) {
           final id = incoming.pathSegments[1];
-          targetUrl = 'spotify:playlist:$id';
+          deepLinkUrl = 'spotify:playlist:$id';
+          webUrl = 'https://open.spotify.com/playlist/$id';
         }
       }
 
-      debugPrint('Target URL: $targetUrl');
+      debugPrint('Web URL: $webUrl');
+      debugPrint('Deep link URL: $deepLinkUrl');
 
-      // Use direct window.open for better iOS compatibility
-      // The '_blank' target with noopener/noreferrer works better on iOS Safari
-      html.window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      // iOS-compatible approach: Try deep link first, fallback to web URL
+      if (deepLinkUrl != null) {
+        // Create a hidden iframe to attempt the deep link
+        final iframe = html.IFrameElement()
+          ..style.display = 'none'
+          ..src = deepLinkUrl;
+        html.document.body!.append(iframe);
+        
+        // Remove iframe after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          iframe.remove();
+        });
+        
+        // Also open web URL as fallback after a short delay
+        // If the app opens, the user won't see this; if it doesn't, they'll get the web version
+        Future.delayed(const Duration(milliseconds: 250), () {
+          html.window.open(webUrl, '_blank', 'noopener,noreferrer');
+        });
+      } else {
+        // Not a Spotify link, just open it normally
+        html.window.open(webUrl, '_blank', 'noopener,noreferrer');
+      }
       
       debugPrint('Link opened successfully');
     } catch (e) {
@@ -273,7 +298,7 @@ class _PlayScreenState extends State<PlayScreen> {
       }
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
